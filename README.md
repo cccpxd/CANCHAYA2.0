@@ -1,2 +1,2 @@
 # CANCHAYA2.0
-CANCHAYA es un proyecto
+CanchaYa es un sistema de reservas y gestión de canchas sintéticas que automatiza disponibilidad, pagos, notificaciones y reportes de ocupación, eliminando los choques de horario y la coordinación manual por WhatsApp o llamadas. Incluye además un sistema de alertas donde los usuarios que necesitan jugadores para completar su equipo pueden publicarlo, y otros usuarios sin equipo pueden unirse, además tiene escalabilidad para integrar sistemas de torneos.
