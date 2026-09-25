@@ -1,0 +1,36 @@
+{% extends 'reservas/base.html' %}
+{% block title %}Canchas | Cancha Ya{% endblock %}
+{% block content %}
+<section class="hero">
+    <p class="eyebrow">RESERVAS DEPORTIVAS</p>
+    <h1>Tu partido empieza aquí.</h1>
+    <p class="lead">Consulta nuestras canchas y separa tu horario en menos de un minuto.</p>
+    <a class="button" href="{% url 'reservas:crear' %}">Nueva reserva</a>
+</section>
+<section class="section-heading">
+    <div>
+        <p class="eyebrow">DISPONIBLES HOY</p>
+        <h2>Elige tu cancha</h2>
+    </div>
+    <span class="count">{{ canchas|length }} activas</span>
+</section>
+<div class="court-grid">
+    {% for cancha in canchas %}
+        <article class="court-card">
+            <div class="court-art">{{ cancha.tipo|slice:":1" }}</div>
+            <div class="card-body">
+                <p class="tag">{{ cancha.tipo }}</p>
+                <h3>{{ cancha.nombre }}</h3>
+                <p class="price">${{ cancha.precio_hora }} <span>/ hora</span></p>
+                <a class="text-link" href="{% url 'reservas:crear' %}">Reservar cancha <span>-></span></a>
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-state">
+            <h3>Aún no hay canchas cargadas</h3>
+            <p>Créala desde el panel de administración para verla aquí.</p>
+            <code>python manage.py createsuperuser</code>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
