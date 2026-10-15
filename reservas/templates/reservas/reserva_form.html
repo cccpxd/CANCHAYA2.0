@@ -19,4 +19,13 @@
         <button class="button" type="submit">Confirmar reserva</button>
     </form>
 </section>
+<script>
+    const reservationForm = document.querySelector('.form-card');
+    const submitButton = reservationForm.querySelector('button[type="submit"]');
+
+    reservationForm.addEventListener('submit', () => {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Enviando...';
+    });
+</script>
 {% endblock %}

@@ -17,6 +17,17 @@ class Cancha(models.Model):
     def __str__(self):
         return self.nombre
 
+    def esta_disponible(self, fecha, hora_inicio, hora_fin, excluir_reserva_id=None):
+        from django.db.models import Q
+        ocupado = self.reservas.filter(
+            fecha=fecha
+        ).filter(Q(hora_inicio__lt=hora_fin) & Q(hora_fin__gt=hora_inicio))
+        
+        if excluir_reserva_id:
+            ocupado = ocupado.exclude(pk=excluir_reserva_id)
+            
+        return not ocupado.exists()
+
 
 class Reserva(models.Model):
     cancha = models.ForeignKey(Cancha, on_delete=models.CASCADE, related_name='reservas')
@@ -32,3 +43,15 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f'{self.cancha} - {self.fecha} - {self.hora_inicio}'
+
+class Torneos(models.Model):
+    nombre = models.CharField(max_length=100)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    canchas = models.ManyToManyField(Cancha, related_name='torneos')
+
+    class Meta:
+        ordering = ['fecha_inicio']
+
+    def __str__(self):
+        return self.nombre

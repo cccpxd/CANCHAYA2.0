@@ -1,8 +1,5 @@
 from django import forms
-from django.db.models import Q
-
 from .models import Cancha, Reserva
-
 
 class ReservaForm(forms.ModelForm):
     class Meta:
@@ -25,17 +22,18 @@ class ReservaForm(forms.ModelForm):
         inicio = cleaned.get('hora_inicio')
         fin = cleaned.get('hora_fin')
 
+        # 1. Validación de coherencia de datos (Responsabilidad del formulario)
         if inicio and fin and inicio >= fin:
             self.add_error('hora_fin', 'La hora final debe ser posterior a la hora inicial.')
 
+        # 2. Validación de regla de negocio delegada al modelo (SRP aplicado)
         if cancha and fecha and inicio and fin and inicio < fin:
-            ocupado = Reserva.objects.filter(
-                cancha=cancha,
-                fecha=fecha,
-            ).filter(Q(hora_inicio__lt=fin) & Q(hora_fin__gt=inicio))
-            if self.instance.pk:
-                ocupado = ocupado.exclude(pk=self.instance.pk)
-            if ocupado.exists():
+            Cancha.objects.select_for_update().get(pk=cancha.pk)
+            # Obtenemos el ID de la reserva si es que estamos editando una existente
+            reserva_id = self.instance.pk if self.instance.pk else None
+            
+            # Le "preguntamos" a la cancha si está disponible
+            if not cancha.esta_disponible(fecha, inicio, fin, reserva_id):
                 raise forms.ValidationError('Ese horario ya esta ocupado para esta cancha.')
 
         return cleaned
