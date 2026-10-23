@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Nueva cancha | Cancha Ya{% endblock %}
+{% block content %}
+<section class="form-layout">
+    <div class="form-intro">
+        <p class="eyebrow">CONFIGURA EL ESPACIO</p>
+        <h1>Registra una cancha.</h1>
+        <p class="lead">La información quedará asociada a esta sesión del navegador.</p>
+    </div>
+    <form method="post" class="form-card">
+        {% csrf_token %}
+        {% for field in form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+            </label>
+        {% endfor %}
+        <button class="button" type="submit">Guardar cancha</button>
+    </form>
+</section>
+{% endblock %}

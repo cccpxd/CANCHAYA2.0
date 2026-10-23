@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Nueva reserva | Cancha Ya{% endblock %}
+{% block content %}
+<section class="form-layout">
+    <div class="form-intro">
+        <p class="eyebrow">AGENDA TU PARTIDO</p>
+        <h1>Reserva una cancha.</h1>
+        <p class="lead">El sistema comprueba que el horario esté disponible antes de guardarlo.</p>
+    </div>
+    {% if tiene_canchas %}
+        <form method="post" class="form-card">
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+                    {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+                </label>
+            {% endfor %}
+            <button class="button" type="submit">Confirmar reserva</button>
+        </form>
+    {% else %}
+        <div class="empty-state"><h3>Primero registra una cancha activa</h3><p>Luego podrás elegirla para tu reserva.</p><a class="button" href="{% url 'crear_cancha' %}">Añadir cancha</a></div>
+    {% endif %}
+</section>
+{% endblock %}

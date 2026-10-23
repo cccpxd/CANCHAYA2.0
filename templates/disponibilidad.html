@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Disponibilidad | Cancha Ya{% endblock %}
+{% block content %}
+<section class="form-layout">
+    <div class="form-intro">
+        <p class="eyebrow">CONSULTA RÁPIDA</p>
+        <h1>Disponibilidad de cancha.</h1>
+        <p class="lead">Consulta si un horario está libre y cuánto costaría, sin crear la reserva.</p>
+    </div>
+    {% if tiene_canchas %}
+        <form method="get" class="form-card">
+            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+                    {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+                </label>
+            {% endfor %}
+            <button class="button" type="submit">Consultar</button>
+        </form>
+    {% else %}
+        <div class="empty-state"><h3>Primero registra una cancha activa</h3><p>Luego podrás consultar su disponibilidad.</p><a class="button" href="{% url 'crear_cancha' %}">Añadir cancha</a></div>
+    {% endif %}
+</section>
+{% if error %}
+    <div class="notice">{{ error }}</div>
+{% endif %}
+{% if resultado %}
+    <section class="section-heading">
+        <div>
+            <p class="eyebrow">RESULTADO</p>
+            <h2>{% if resultado.disponible %}Cancha disponible{% else %}Cancha no disponible{% endif %}</h2>
+        </div>
+    </section>
+    {% if resultado.disponible %}
+        <p class="lead">Total estimado: ${{ resultado.total|floatformat:"-2" }}</p>
+    {% else %}
+        <h3>Choques encontrados</h3>
+        <ul>
+            {% for choque in resultado.choques %}
+                <li>{{ choque.cancha_nombre }} · {{ choque.fecha }} · {{ choque.hora_inicio }} – {{ choque.hora_fin }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endif %}
+{% endblock %}

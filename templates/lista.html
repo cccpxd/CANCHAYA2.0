@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Reservas | Cancha Ya{% endblock %}
+{% block content %}
+<section class="section-heading page-heading">
+    <div><p class="eyebrow">AGENDA DE JUEGO</p><h1>Reservas</h1></div>
+    <a class="button" href="{% url 'crear_reserva' %}">Nueva reserva</a>
+</section>
+{% if reservas %}
+    <div class="reservation-list">
+        {% for reserva in reservas %}
+            <article class="reservation-row">
+                <div><strong>{{ reserva.cancha_nombre }}</strong><span>Cancha</span></div>
+                <div><strong>{{ reserva.fecha }}</strong><span>{{ reserva.hora_inicio }} – {{ reserva.hora_fin }}</span></div>
+                <div><strong>{{ reserva.nombre_cliente }}</strong><span>{{ reserva.telefono }}</span></div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state"><h3>No hay reservas todavía</h3><p>Las reservas de esta sesión aparecerán aquí.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Canchas | Cancha Ya{% endblock %}
+{% block content %}
+<section class="hero">
+    <p class="eyebrow">RESERVAS LOCALES · SIN BASE DE DATOS</p>
+    <h1>Tu próximo partido empieza aquí.</h1>
+    <p class="lead">Registra canchas y reserva horarios. Los datos permanecen en la sesión de este navegador.</p>
+    <div class="hero-actions">
+        <a class="button" href="{% url 'crear_cancha' %}">Añadir cancha</a>
+        <a class="button button-light" href="{% url 'crear_reserva' %}">Crear reserva</a>
+        <a class="button button-light" href="{% url 'disponibilidad' %}">Consultar disponibilidad</a>
+    </div>
+</section>
+<section class="section-heading">
+    <div><p class="eyebrow">TU ESPACIO DE JUEGO</p><h2>Canchas registradas</h2></div>
+    <span class="count">{{ canchas|length }} canchas · {{ cantidad_activas }} activas · {{ cantidad_reservas }} reservas</span>
+</section>
+{% if canchas %}
+    <div class="court-grid">
+        {% for cancha in canchas %}
+            <article class="court-card{% if not cancha.activa %} court-card-inactiva{% endif %}">
+                <div class="court-art" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</div>
+                <div class="card-body">
+                    <p class="tag">{{ cancha.tipo }}{% if not cancha.activa %} · Inactiva{% endif %}</p>
+                    <h3>{{ cancha.nombre }}</h3>
+                    <p class="price">${{ cancha.precio_hora }} <span>/ hora</span></p>
+                    {% if cancha.activa %}
+                        <a class="text-link" href="{% url 'crear_reserva' %}">Reservar horario <span>↗</span></a>
+                    {% endif %}
+                    <form class="toggle-form" method="post" action="{% url 'alternar_cancha' cancha.id %}">
+                        {% csrf_token %}<button class="text-button" type="submit">{% if cancha.activa %}Desactivar cancha{% else %}Activar cancha{% endif %}</button>
+                    </form>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state"><h3>Aún no hay canchas</h3><p>Registra la primera para empezar a reservar.</p></div>
+{% endif %}
+{% if canchas or cantidad_reservas %}
+    <form class="reset-form" method="post" action="{% url 'reiniciar_datos' %}">
+        {% csrf_token %}<button class="text-button" type="submit">Borrar datos de esta sesión</button>
+    </form>
+{% endif %}
+{% endblock %}
