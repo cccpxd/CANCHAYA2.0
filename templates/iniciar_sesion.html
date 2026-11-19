@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar sesión | Cancha Ya{% endblock %}
+{% block content %}
+<section class="auth-layout">
+    <p class="eyebrow">BIENVENIDO DE VUELTA</p>
+    <h1>Inicia sesión.</h1>
+    <form method="post" class="form-card">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
+                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+            </label>
+        {% endfor %}
+        <button class="button" type="submit">Entrar</button>
+        <p class="auth-switch">¿Primera vez aquí? <a href="{% url 'registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crea una cuenta</a></p>
+    </form>
+</section>
+{% endblock %}

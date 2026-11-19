@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Entornos virtuales
+.venv/
+venv/
+.env
+
+# Django / bases de datos locales
+*.sqlite3
+db.sqlite3
+
+# Archivos de entorno de desarrollo
+.vscode/
+.idea/

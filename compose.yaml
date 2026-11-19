@@ -1,0 +1,32 @@
+
+services:
+  db:
+    container_name: canchaya_postgres
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: canchaYA
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5433:5432"
+    volumes:
+      - canchaya_data:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: canchaya_pgadmin
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@canchaya.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5051:80"
+    volumes:
+      - canchaya_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+volumes:
+  canchaya_data:
+  canchaya_pgadmin_data:
