@@ -1,16 +1,23 @@
 
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from .disponibilidad import CanchaNoEncontrada, consultar_disponibilidad
+from .disponibilidad import (
+    CanchaNoEncontrada,
+    consultar_disponibilidad,
+    franjas_del_dia,
+)
+from .forms import ReservaForm
 from .logic import esta_disponible
 from .models import Cancha, Reserva, Usuario
 
@@ -301,6 +308,11 @@ class AutenticacionYPermisosTests(TestCase):
                 rol=Usuario.Rol.ADMINISTRADOR,
             )
 
+    @override_settings(
+        ADMIN_USERNAME='',
+        ADMIN_PASSWORD='',
+        ADMIN_EMAIL='',
+    )
     @patch(
         'parcial.management.commands.crear_administrador.getpass',
         side_effect=['V3ryUnique-Passphrase-907!', 'V3ryUnique-Passphrase-907!'],
@@ -328,4 +340,170 @@ class AutenticacionYPermisosTests(TestCase):
         self.assertRedirects(respuesta, reverse('inicio'))
         self.assertTrue(
             Cancha.objects.filter(nombre='Cancha del administrador').exists()
+        )
+
+
+class FaseCeroYUnoTests(TestCase):
+    """Estados de reserva, cancelación y calendario de franjas."""
+
+    def setUp(self):
+        self.manana = timezone.localdate() + timedelta(days=2)
+        self.cancha = Cancha.objects.create(
+            nombre='Cancha Central',
+            tipo='Futbol 5',
+            precio_hora=Decimal('50000.00'),
+        )
+        self.user_model = get_user_model()
+
+    def crear_usuario(self, username='jugador'):
+        usuario = self.user_model(username=username, email=f'{username}@example.com')
+        usuario.password = 'secreto123'
+        usuario.save()
+        return usuario
+
+    def crear_reserva(
+        self,
+        inicio=time(14, 0),
+        fin=time(16, 0),
+        usuario=None,
+    ):
+        return Reserva.objects.create(
+            usuario=usuario,
+            cancha=self.cancha,
+            nombre_cliente='Cliente de prueba',
+            telefono='3001234567',
+            fecha=self.manana,
+            hora_inicio=inicio,
+            hora_fin=fin,
+        )
+
+    # --- Fase 0 ---------------------------------------------------------
+
+    def test_el_modelo_rechaza_dos_reservas_solapadas(self):
+        self.crear_reserva(time(14, 0), time(16, 0))
+
+        with self.assertRaises(ValidationError):
+            self.crear_reserva(time(15, 0), time(17, 0))
+
+    def test_el_formulario_rechaza_una_hora_pasada_de_hoy(self):
+        if timezone.localtime().time() == time(0, 0):
+            self.skipTest('A las 00:00 no queda una hora anterior del mismo día.')
+
+        form = ReservaForm(
+            data={
+                'cancha_id': str(self.cancha.id),
+                'fecha': timezone.localdate().isoformat(),
+                'hora_inicio': '00:00',
+                'hora_fin': '01:00',
+            },
+            canchas=Cancha.objects.filter(activa=True),
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('hora_inicio', form.errors)
+
+    def test_cancelar_libera_el_horario(self):
+        usuario = self.crear_usuario()
+        reserva = self.crear_reserva(usuario=usuario)
+
+        self.client.force_login(usuario)
+        respuesta = self.client.post(
+            reverse('cancelar_reserva', args=[reserva.id])
+        )
+
+        self.assertRedirects(respuesta, reverse('lista_reservas'))
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.estado, Reserva.Estado.CANCELADA)
+
+        disponible = consultar_disponibilidad(
+            self.cancha.id,
+            self.manana,
+            time(14, 0),
+            time(15, 0),
+        )
+        self.assertTrue(disponible['disponible'])
+
+    def test_no_se_puede_cancelar_una_reserva_ajena(self):
+        dueno = self.crear_usuario('dueno')
+        otro = self.crear_usuario('otro')
+        reserva = self.crear_reserva(usuario=dueno)
+
+        self.client.force_login(otro)
+        self.client.post(reverse('cancelar_reserva', args=[reserva.id]))
+
+        reserva.refresh_from_db()
+        self.assertEqual(reserva.estado, Reserva.Estado.CONFIRMADA)
+
+    def test_el_registro_guarda_la_contrasena_en_texto_plano(self):
+        respuesta = self.client.post(
+            reverse('registro'),
+            {
+                'first_name': 'Nuevo',
+                'last_name': 'Jugador',
+                'username': 'nuevo',
+                'email': 'nuevo@example.com',
+                'telefono': '3001234567',
+                'password1': 'clave2026',
+                'password2': 'clave2026',
+            },
+        )
+
+        self.assertRedirects(respuesta, reverse('inicio'))
+        usuario = self.user_model.objects.get(username='nuevo')
+        self.assertEqual(usuario.password, 'clave2026')
+        self.assertTrue(self.client.login(username='nuevo', password='clave2026'))
+
+    @override_settings(
+        ADMIN_USERNAME='jefe',
+        ADMIN_PASSWORD='cancha2026',
+        ADMIN_EMAIL='jefe@example.com',
+    )
+    def test_el_administrador_se_crea_desde_el_entorno(self):
+        call_command('crear_administrador', stdout=StringIO())
+
+        jefe = self.user_model.objects.get(username='jefe')
+        self.assertEqual(jefe.password, 'cancha2026')
+        self.assertTrue(jefe.is_superuser)
+        self.assertTrue(jefe.perfil.es_administrador)
+        self.assertTrue(self.client.login(username='jefe', password='cancha2026'))
+
+    # --- Fase 1 ---------------------------------------------------------
+
+    def test_las_franjas_marcan_el_horario_ocupado(self):
+        self.crear_reserva(time(14, 0), time(16, 0))
+
+        franjas = {
+            franja['inicio']: franja['estado']
+            for franja in franjas_del_dia(self.cancha, self.manana)
+        }
+
+        self.assertEqual(franjas[time(13, 0)], 'libre')
+        self.assertEqual(franjas[time(14, 0)], 'ocupado')
+        self.assertEqual(franjas[time(15, 0)], 'ocupado')
+        self.assertEqual(franjas[time(16, 0)], 'libre')
+
+    def test_el_calendario_y_la_api_entregan_la_semana(self):
+        self.crear_reserva(time(14, 0), time(16, 0))
+
+        respuesta = self.client.get(
+            reverse('calendario'),
+            {'cancha': self.cancha.id},
+        )
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'Horarios de la semana')
+
+        api = self.client.get(
+            reverse('api_disponibilidad'),
+            {'cancha_id': self.cancha.id, 'semana': self.manana.isoformat()},
+        )
+        self.assertEqual(api.status_code, 200)
+
+        datos = api.json()
+        self.assertEqual(len(datos['dias']), 7)
+        self.assertTrue(
+            any(
+                franja['estado'] == 'ocupado'
+                for dia in datos['dias']
+                for franja in dia['franjas']
+            )
         )

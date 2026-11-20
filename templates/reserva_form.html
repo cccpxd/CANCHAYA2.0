@@ -1,25 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}Nueva reserva | Cancha Ya{% endblock %}
 {% block content %}
-<section class="form-layout">
-    <div class="form-intro">
-        <p class="eyebrow">AGENDA TU PARTIDO</p>
-        <h1>Reserva una cancha.</h1>
-        <p class="lead">El sistema comprueba que el horario esté disponible antes de guardarlo para {{ user.get_full_name|default:user.username }}.</p>
+
+<section class="split">
+    <div class="wrap split-inner">
+        <div class="split-intro">
+            <p class="eyebrow">Agenda tu partido</p>
+            <h1>Reserva una cancha.</h1>
+            <p class="lead">El sistema comprueba que el horario esté libre antes de guardarlo. Si el cupo se ocupa mientras llenas el formulario, te avisa.</p>
+
+            <ul class="ticks">
+                <li>Elige cancha, fecha y horas.</li>
+                <li>Los horarios ocupados no se pueden repetir.</li>
+                <li>Puedes cancelar mientras el partido no haya empezado.</li>
+            </ul>
+
+            <a class="link link--arrow" href="{% url 'calendario' %}">Prefiero ver el calendario
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        </div>
+
+        {% if tiene_canchas %}
+            <div class="panel form-card">
+                <p class="form-card-head">Datos de la reserva</p>
+                <form method="post" class="form">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    {% for field in form %}
+                        <div class="field{% if field.errors %} field--error{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endfor %}
+
+                    <button class="btn btn--primary btn--block" type="submit">Confirmar reserva</button>
+                    <p class="form-note">La reserva queda a nombre de <strong>{{ user.get_full_name|default:user.username }}</strong>.</p>
+                </form>
+            </div>
+        {% else %}
+            <div class="empty">
+                <h2>Primero registra una cancha</h2>
+                <p>Necesitas una cancha activa para poder reservar.</p>
+                <a class="btn btn--primary" href="{% url 'crear_cancha' %}">Añadir cancha</a>
+            </div>
+        {% endif %}
     </div>
-    {% if tiene_canchas %}
-        <form method="post" class="form-card">
-            {% csrf_token %}
-            {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-            {% for field in form %}
-                <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
-                    {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
-                </label>
-            {% endfor %}
-            <button class="button" type="submit">Confirmar reserva</button>
-        </form>
-    {% else %}
-        <div class="empty-state"><h3>Primero registra una cancha activa</h3><p>Luego podrás elegirla para tu reserva.</p><a class="button" href="{% url 'crear_cancha' %}">Añadir cancha</a></div>
-    {% endif %}
 </section>
+
 {% endblock %}

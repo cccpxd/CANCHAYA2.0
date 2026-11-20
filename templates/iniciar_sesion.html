@@ -1,20 +1,53 @@
 {% extends 'base.html' %}
 {% block title %}Iniciar sesión | Cancha Ya{% endblock %}
 {% block content %}
-<section class="auth-layout">
-    <p class="eyebrow">BIENVENIDO DE VUELTA</p>
-    <h1>Inicia sesión.</h1>
-    <form method="post" class="form-card">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-        {% for field in form %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
-                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
-            </label>
-        {% endfor %}
-        <button class="button" type="submit">Entrar</button>
-        <p class="auth-switch">¿Primera vez aquí? <a href="{% url 'registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crea una cuenta</a></p>
-    </form>
+
+<section class="auth">
+    <div class="auth-panel">
+        <div class="auth-panel-inner">
+            <div>
+                <p class="eyebrow eyebrow--lime">Bienvenido de vuelta</p>
+                <h1>Vuelve<br>a la cancha.</h1>
+                <p class="lead">Entra para ver tus reservas, cancelar un horario o apartar el siguiente.</p>
+            </div>
+
+            <ul class="ticks ticks--light">
+                <li>Reservas y estado en un solo lugar.</li>
+                <li>Cancelación con un clic.</li>
+                <li>Calendario siempre al día.</li>
+            </ul>
+
+            <p class="auth-panel-foot">Canchas sintéticas · cupos de 60 minutos</p>
+        </div>
+    </div>
+
+    <div class="auth-main">
+        <div class="auth-form">
+            <h2>Inicia sesión</h2>
+            <p class="form-note form-note--left">Usa el usuario y la contraseña con los que te registraste.</p>
+
+            <form method="post" class="form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="field{% if field.errors %} field--error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+            </form>
+
+            <p class="auth-switch">¿Primera vez aquí? <a href="{% url 'registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crea una cuenta</a></p>
+        </div>
+    </div>
 </section>
+
 {% endblock %}

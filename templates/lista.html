@@ -1,21 +1,73 @@
 {% extends 'base.html' %}
 {% block title %}Reservas | Cancha Ya{% endblock %}
 {% block content %}
-<section class="section-heading page-heading">
-    <div><p class="eyebrow">AGENDA DE JUEGO</p><h1>Reservas</h1></div>
-    <a class="button" href="{% url 'crear_reserva' %}">Nueva reserva</a>
-</section>
-{% if reservas %}
-    <div class="reservation-list">
-        {% for reserva in reservas %}
-            <article class="reservation-row">
-                <div><strong>{{ reserva.cancha.nombre }}</strong><span>Cancha</span></div>
-                <div><strong>{{ reserva.fecha }}</strong><span>{{ reserva.hora_inicio }} – {{ reserva.hora_fin }}</span></div>
-                <div><strong>{{ reserva.nombre_cliente }}</strong><span>{{ reserva.telefono }}</span></div>
-            </article>
-        {% endfor %}
+
+<section class="page-head">
+    <div class="wrap page-head-row">
+        <div>
+            <p class="eyebrow">Agenda de juego</p>
+            <h1>Reservas</h1>
+            <p class="lead">{% if reservas %}Tus horarios y su estado.{% else %}Aquí aparecerán las reservas que crees.{% endif %}</p>
+        </div>
+        <a class="btn btn--primary" href="{% url 'crear_reserva' %}">Nueva reserva</a>
     </div>
-{% else %}
-    <div class="empty-state"><h3>No hay reservas todavía</h3><p>Las nuevas reservas aparecerán aquí.</p></div>
-{% endif %}
+</section>
+
+<div class="wrap">
+    {% if reservas %}
+        <div class="reservas">
+            <div class="reservas-top">
+                <span>{{ reservas|length }} reservas</span>
+                <span>Cancelar libera el cupo al instante</span>
+            </div>
+
+            {% for reserva in reservas %}
+                <article class="reserva{% if not reserva.activa %} is-cancelled{% endif %}">
+                    <div class="reserva-date">
+                        <span class="reserva-dow">{{ reserva.fecha|date:"D" }}</span>
+                        <strong>{{ reserva.fecha|date:"d" }}</strong>
+                        <span class="reserva-month">{{ reserva.fecha|date:"M" }}</span>
+                    </div>
+
+                    <div class="reserva-info">
+                        <h3>{{ reserva.cancha.nombre }}</h3>
+                        <p class="reserva-time">
+                            {{ reserva.hora_inicio|time:"H:i" }} – {{ reserva.hora_fin|time:"H:i" }}
+                            <span class="reserva-sep">·</span>
+                            {{ reserva.nombre_cliente }}
+                        </p>
+                        {% if reserva.telefono %}<p class="reserva-phone">{{ reserva.telefono }}</p>{% endif %}
+                    </div>
+
+                    <div class="reserva-status">
+                        {% if reserva.fecha == hoy and reserva.activa %}
+                            <span class="pill pill--today">Hoy</span>
+                        {% endif %}
+                        {% if reserva.activa %}
+                            <span class="pill pill--ok"><i class="dot dot--libre"></i>Confirmada</span>
+                        {% else %}
+                            <span class="pill pill--off">Cancelada</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="reserva-actions">
+                        {% if reserva.puede_cancelarse %}
+                            <form method="post" action="{% url 'cancelar_reserva' reserva.id %}">
+                                {% csrf_token %}
+                                <button class="link link--danger" type="submit">Cancelar reserva</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">
+            <h2>Todavía no hay reservas</h2>
+            <p>Elige un cupo libre en el calendario y aparecerá aquí con su estado.</p>
+            <a class="btn btn--primary" href="{% url 'calendario' %}">Ver el calendario</a>
+        </div>
+    {% endif %}
+</div>
+
 {% endblock %}

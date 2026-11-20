@@ -8,6 +8,11 @@ __pycache__/
 venv/
 .env
 
+# Herramientas de diseño y capturas locales
+.taste-skill/
+shots/
+shots-*/
+
 # Django / bases de datos locales
 *.sqlite3
 db.sqlite3
