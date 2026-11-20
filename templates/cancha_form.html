@@ -1,20 +1,45 @@
 {% extends 'base.html' %}
 {% block title %}Nueva cancha | Cancha Ya{% endblock %}
 {% block content %}
-<section class="form-layout">
-    <div class="form-intro">
-        <p class="eyebrow">CONFIGURA EL ESPACIO</p>
-        <h1>Registra una cancha.</h1>
-        <p class="lead">La información quedará guardada para futuras reservas.</p>
+
+<section class="split">
+    <div class="wrap split-inner">
+        <div class="split-intro">
+            <p class="eyebrow">Configura el espacio</p>
+            <h1>Registra una cancha.</h1>
+            <p class="lead">Nombre, tipo y precio por hora. En cuanto esté activa aparece en el calendario y se puede reservar.</p>
+
+            <ul class="ticks">
+                <li>El precio se usa para calcular el total de cada reserva.</li>
+                <li>Puedes desactivarla cuando esté en mantenimiento.</li>
+            </ul>
+
+            <a class="link link--arrow" href="{% url 'inicio' %}#canchas">Volver a las canchas
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        </div>
+
+        <div class="panel form-card">
+            <p class="form-card-head">Datos de la cancha</p>
+            <form method="post" class="form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="field{% if field.errors %} field--error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn btn--primary btn--block" type="submit">Guardar cancha</button>
+            </form>
+        </div>
     </div>
-    <form method="post" class="form-card">
-        {% csrf_token %}
-        {% for field in form %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
-                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
-            </label>
-        {% endfor %}
-        <button class="button" type="submit">Guardar cancha</button>
-    </form>
 </section>
+
 {% endblock %}

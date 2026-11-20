@@ -1,42 +1,154 @@
 {% load static %}
 <!doctype html>
-<html lang="es">
+<html lang="es" data-type="software" data-radius="soft">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Cancha Ya{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}?v=2">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}Cancha Ya · Reservas de canchas sintéticas{% endblock %}</title>
+    <meta name="description" content="Mira los horarios libres de la semana, reserva tu cupo y cancélalo si el partido se cae. Cancha Ya lleva la agenda de las canchas sintéticas.">
+    <meta name="page-type" content="software">
+    <meta name="site-kind" content="software">
+    <meta name="theme-color" content="#0B0F0C">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230B0F0C'/><rect x='6.5' y='9' width='19' height='14' rx='2' stroke='%23DAFA9C' stroke-width='1.6' fill='none'/><path d='M16 9v14' stroke='%23DAFA9C' stroke-width='1.6'/><circle cx='16' cy='16' r='3.2' stroke='%23DAFA9C' stroke-width='1.6' fill='none'/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'styles.css' %}?v=14">
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <header class="topbar">
-        <a class="brand" href="{% url 'inicio' %}">CANCHA YA</a>
-        <div class="topbar-right">
-            <nav aria-label="Navegación principal">
-                <a href="{% url 'inicio' %}">Canchas</a>
-                <a href="{% url 'lista_reservas' %}">Reservas</a>
-                <a href="{% url 'disponibilidad' %}">Disponibilidad</a>
-                <a class="nav-action" href="{% url 'crear_reserva' %}">Reservar</a>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+    <header class="nav">
+        <div class="wrap nav-inner">
+            <a class="brand" href="{% url 'inicio' %}" aria-label="Cancha Ya, inicio">
+                <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="1.6" y="3.6" width="20.8" height="16.8" rx="2.6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 3.6v16.8" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="12" cy="12" r="3.9" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span class="brand-name">Cancha<span class="brand-accent">Ya</span></span>
+            </a>
+
+            <nav class="nav-links" aria-label="Navegación principal">
+                <a href="{% url 'calendario' %}" {% if request.resolver_match.url_name == 'calendario' %}aria-current="page"{% endif %}>Calendario</a>
+                <a href="{% url 'inicio' %}#canchas">Canchas</a>
+                <a href="{% url 'lista_reservas' %}" {% if request.resolver_match.url_name == 'lista_reservas' %}aria-current="page"{% endif %}>Reservas</a>
+                <a href="{% url 'disponibilidad' %}" {% if request.resolver_match.url_name == 'disponibilidad' %}aria-current="page"{% endif %}>Consultar</a>
             </nav>
-            <div class="account-actions">
+
+            <div class="nav-actions">
                 {% if user.is_authenticated %}
-                    <span class="account-name">{{ user.username }}</span>
-                    <form method="post" action="{% url 'cerrar_sesion' %}">
-                        {% csrf_token %}<button class="nav-account" type="submit">Cerrar sesión</button>
+                    <span class="nav-user" title="{{ user.get_full_name|default:user.username }}">{{ user.get_full_name|default:user.username }}</span>
+                    <form class="nav-form" method="post" action="{% url 'cerrar_sesion' %}">
+                        {% csrf_token %}
+                        <button class="link" type="submit">Salir</button>
                     </form>
                 {% else %}
-                    <a class="nav-account" href="{% url 'iniciar_sesion' %}">Iniciar sesión</a>
-                    <a class="nav-account nav-register" href="{% url 'registro' %}">Registrarse</a>
+                    <a class="link nav-signin" href="{% url 'iniciar_sesion' %}">Entrar</a>
                 {% endif %}
+                <a class="btn btn--primary btn--sm nav-cta" href="{% url 'crear_reserva' %}">Reservar cupo</a>
+                <button class="nav-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu-principal">
+                    <span></span><span></span>
+                    <span class="sr-only">Abrir menú</span>
+                </button>
             </div>
         </div>
     </header>
-    <main class="page-shell">
+
+    <div class="nav-sheet" id="menu-principal" data-menu role="dialog" aria-modal="true" aria-label="Menú" tabindex="-1" hidden>
+        <div class="nav-sheet-head">
+            <a class="brand" href="{% url 'inicio' %}">
+                <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="1.6" y="3.6" width="20.8" height="16.8" rx="2.6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M12 3.6v16.8" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="12" cy="12" r="3.9" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span class="brand-name">Cancha<span class="brand-accent">Ya</span></span>
+            </a>
+            <button class="nav-close" type="button" data-menu-close>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <span class="sr-only">Cerrar menú</span>
+            </button>
+        </div>
+        <nav class="nav-sheet-links" aria-label="Navegación del menú">
+            <a href="{% url 'calendario' %}">Calendario</a>
+            <a href="{% url 'inicio' %}#canchas">Canchas</a>
+            <a href="{% url 'lista_reservas' %}">Reservas</a>
+            <a href="{% url 'disponibilidad' %}">Consultar</a>
+        </nav>
+        <div class="nav-sheet-foot">
+            {% if user.is_authenticated %}
+                <p class="nav-sheet-user">Sesión de {{ user.get_full_name|default:user.username }}</p>
+                <form method="post" action="{% url 'cerrar_sesion' %}">
+                    {% csrf_token %}
+                    <button class="btn btn--secondary btn--block" type="submit">Cerrar sesión</button>
+                </form>
+            {% else %}
+                <a class="btn btn--secondary btn--block" href="{% url 'iniciar_sesion' %}">Entrar</a>
+                <a class="link" href="{% url 'registro' %}">Crear una cuenta</a>
+            {% endif %}
+            <a class="btn btn--primary btn--block" href="{% url 'crear_reserva' %}">Reservar cupo</a>
+        </div>
+    </div>
+
+    <main id="contenido">
         {% if messages %}
-            {% for message in messages %}
-                <div class="notice" role="status">{{ message }}</div>
-            {% endfor %}
+            <div class="wrap flashes">
+                {% for message in messages %}
+                    <p class="flash flash--{{ message.tags|default:'info' }}" role="status">{{ message }}</p>
+                {% endfor %}
+            </div>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="footer">
+        <div class="wrap footer-top">
+            <div class="footer-brand">
+                <a class="brand" href="{% url 'inicio' %}">
+                    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="1.6" y="3.6" width="20.8" height="16.8" rx="2.6" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 3.6v16.8" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="12" cy="12" r="3.9" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <span class="brand-name">Cancha<span class="brand-accent">Ya</span></span>
+                </a>
+                <p class="footer-note">La agenda de las canchas sintéticas: horarios claros, cupos confirmados y cancelación sin llamadas.</p>
+            </div>
+
+            <nav class="footer-col" aria-label="Jugar">
+                <p class="footer-head">Jugar</p>
+                <a href="{% url 'calendario' %}">Calendario</a>
+                <a href="{% url 'crear_reserva' %}">Reservar</a>
+                <a href="{% url 'disponibilidad' %}">Consultar</a>
+            </nav>
+
+            <nav class="footer-col" aria-label="Cuenta">
+                <p class="footer-head">Cuenta</p>
+                <a href="{% url 'lista_reservas' %}">Mis reservas</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'crear_reserva' %}">Nueva reserva</a>
+                {% else %}
+                    <a href="{% url 'iniciar_sesion' %}">Entrar</a>
+                    <a href="{% url 'registro' %}">Crear cuenta</a>
+                {% endif %}
+            </nav>
+
+            <div class="footer-col">
+                <p class="footer-head">Cancha Ya</p>
+                <p class="footer-small">Reservas de canchas sintéticas, sin cruces de horario.</p>
+                <p class="footer-small footer-mono">Precios en pesos colombianos</p>
+            </div>
+        </div>
+
+        <div class="wrap footer-legal">
+            <span>© {% now "Y" %} Cancha Ya</span>
+            <span>Hecho para jugar, no para llamar.</span>
+        </div>
+    </footer>
+
+    <script src="{% static 'app.js' %}?v=3" defer></script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

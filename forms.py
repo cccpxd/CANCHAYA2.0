@@ -1,9 +1,9 @@
-
 from datetime import date, datetime
 
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.utils import timezone
 
 from .models import Cancha, Usuario
 
@@ -18,7 +18,7 @@ class RegistroForm(UserCreationForm):
         label='Contraseña',
         strip=False,
         widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),
-        help_text='Usa al menos 10 caracteres y evita contraseñas comunes.',
+        help_text='Mínimo 6 caracteres.',
     )
     password2 = forms.CharField(
         label='Confirma tu contraseña',
@@ -46,6 +46,9 @@ class RegistroForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
+
+        # Texto plano a propósito: este proyecto no usa el hash de Django.
+        user.password = self.cleaned_data['password1']
 
         if commit:
             user.save()
@@ -106,7 +109,7 @@ class _CanchaFechaHoraForm(forms.Form):
     def clean_fecha(self):
         fecha = self.cleaned_data['fecha']
 
-        if fecha < date.today():
+        if fecha < timezone.localdate():
             raise forms.ValidationError(
                 'La fecha no puede estar en el pasado.'
             )
@@ -118,12 +121,25 @@ class _CanchaFechaHoraForm(forms.Form):
 
         inicio = cleaned.get('hora_inicio')
         fin = cleaned.get('hora_fin')
+        fecha = cleaned.get('fecha')
 
         if inicio and fin and inicio >= fin:
             self.add_error(
                 'hora_fin',
                 'La hora final debe ser posterior a la hora inicial.'
             )
+
+        if fecha == timezone.localdate() and inicio:
+            hora_actual = timezone.localtime().time().replace(
+                second=0,
+                microsecond=0,
+            )
+
+            if inicio < hora_actual:
+                self.add_error(
+                    'hora_inicio',
+                    'Esa hora ya pasó. Elige una hora posterior.'
+                )
 
         return cleaned
 
@@ -138,23 +154,4 @@ class ReservaForm(_CanchaFechaHoraForm):
 
 
 class DisponibilidadForm(_CanchaFechaHoraForm):
-
-    def clean(self):
-        cleaned = super().clean()
-
-        fecha = cleaned.get('fecha')
-        hora_inicio = cleaned.get('hora_inicio')
-
-        if fecha == date.today() and hora_inicio:
-            hora_actual = datetime.now().time().replace(
-                second=0,
-                microsecond=0,
-            )
-
-            if hora_inicio < hora_actual:
-                self.add_error(
-                    'hora_inicio',
-                    'No puedes consultar una hora pasada.'
-                )
-
-        return cleaned
+    pass

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static canchaya %}
+{% block title %}Calendario | Cancha Ya{% endblock %}
+{% block content %}
+
+<section class="page-head">
+    <div class="wrap">
+        <p class="eyebrow">Disponibilidad en vivo</p>
+        <h1>Horarios de la semana</h1>
+        <p class="lead">Los cupos marcados en lima están libres. Toca uno y el formulario abre con la cancha, la fecha y las horas ya puestas.</p>
+    </div>
+</section>
+
+{% if cancha %}
+    <div class="wrap cal-page">
+        <div class="cal-toolbar">
+            <div class="court-tabs" role="group" aria-label="Elegir cancha">
+                {% for opcion in canchas %}
+                    <a class="court-tab{% if cancha.id == opcion.id %} is-active{% endif %}"
+                       href="?cancha={{ opcion.id }}&semana={{ semana|date:'Y-m-d' }}"
+                       {% if cancha.id == opcion.id %}aria-current="true"{% endif %}>
+                        <span class="court-tab-name">{{ opcion.nombre }}</span>
+                        <span class="court-tab-type">{{ opcion.get_tipo_display }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+
+            <div class="week-nav">
+                <a class="icon-btn" href="?cancha={{ cancha.id }}&semana={{ anterior|date:'Y-m-d' }}" aria-label="Semana anterior">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+                <p class="week-range">{{ lunes|date:"d M" }} <span>—</span> {{ domingo|date:"d M" }}<span class="week-year"> {{ domingo|date:"Y" }}</span></p>
+                <a class="icon-btn" href="?cancha={{ cancha.id }}&semana={{ siguiente|date:'Y-m-d' }}" aria-label="Semana siguiente">
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+                <a class="link week-today" href="?cancha={{ cancha.id }}">Hoy</a>
+            </div>
+        </div>
+
+        <p class="cal-hint">Desliza la tabla para ver el resto de la semana.</p>
+
+        <div
+            class="board cal-board"
+            data-calendario
+            data-api="{% url 'api_disponibilidad' %}"
+            data-cancha="{{ cancha.id }}"
+            data-semana="{{ semana|date:'Y-m-d' }}"
+            data-reserva="{% url 'crear_reserva' %}"
+        >
+            <div class="board-bar">
+                <span class="live-dot" aria-hidden="true"></span>
+                <span class="board-title">{{ cancha.nombre }}</span>
+                <span class="board-meta">{{ cancha.get_tipo_display }} · {{ cancha.precio_hora|precio }} por hora</span>
+                <span class="board-live">En vivo</span>
+            </div>
+
+            <div class="cal-scroll">
+                <table class="cal">
+                    <caption class="sr-only">Disponibilidad de {{ cancha.nombre }} por día y hora</caption>
+                    <thead>
+                        <tr>
+                            <th class="cal-corner"><span class="sr-only">Hora</span></th>
+                            {% for dia in dias %}
+                                <th scope="col" class="{% if dia.fecha == hoy %}is-today{% endif %}">
+                                    <span class="cal-dow">{{ dia.fecha|date:"D" }}</span>
+                                    <span class="cal-date">{{ dia.fecha|date:"d" }}</span>
+                                    <span class="cal-month">{{ dia.fecha|date:"M" }}</span>
+                                </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fila in filas %}
+                            <tr>
+                                <th scope="row" class="cal-hour">{{ fila.inicio|time:"H:i" }}</th>
+                                {% for celda in fila.celdas %}
+                                    <td
+                                        class="slot{% if celda.dia == hoy %} is-today{% endif %}"
+                                        data-dia="{{ celda.dia|date:'Y-m-d' }}"
+                                        data-hora="{{ celda.franja.inicio|time:'H:i' }}"
+                                        data-estado="{{ celda.franja.estado }}"
+                                    >
+                                        {% if celda.franja.estado == 'libre' %}
+                                            <a class="cell cell--libre"
+                                               href="{% url 'crear_reserva' %}?cancha_id={{ cancha.id }}&fecha={{ celda.dia|date:'Y-m-d' }}&hora_inicio={{ celda.franja.inicio|time:'H:i' }}&hora_fin={{ celda.franja.fin|time:'H:i' }}"
+                                               aria-label="Reservar {{ cancha.nombre }} el {{ celda.dia|date:'j/m' }} a las {{ celda.franja.inicio|time:'H:i' }}">
+                                                <span class="cell-text">Libre</span>
+                                                <span class="cell-plus" aria-hidden="true">+</span>
+                                            </a>
+                                        {% elif celda.franja.estado == 'ocupado' %}
+                                            <span class="cell cell--ocupado"><span class="cell-text">Ocupado</span></span>
+                                        {% else %}
+                                            <span class="cell cell--pasado"><span class="sr-only">Hora pasada</span></span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="board-foot cal-foot">
+                <div class="legend">
+                    <span><i class="dot dot--libre"></i> Libre</span>
+                    <span><i class="dot dot--ocupado"></i> Ocupado</span>
+                    <span><i class="dot dot--pasado"></i> Ya pasó</span>
+                </div>
+                <span class="cal-updated" data-actualizado>Se actualiza cada 30 segundos.</span>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="wrap">
+        <div class="empty">
+            <h2>No hay canchas activas</h2>
+            <p>Registra una cancha para ver su calendario de disponibilidad.</p>
+            {% if user.is_superuser %}
+                <a class="btn btn--primary" href="{% url 'crear_cancha' %}">Añadir cancha</a>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

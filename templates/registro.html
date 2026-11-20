@@ -1,21 +1,54 @@
 {% extends 'base.html' %}
-{% block title %}Registro | Cancha Ya{% endblock %}
+{% block title %}Crear cuenta | Cancha Ya{% endblock %}
 {% block content %}
-<section class="auth-layout">
-    <p class="eyebrow">CREA TU CUENTA</p>
-    <h1>Regístrate para reservar.</h1>
-    <form method="post" class="form-card">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-        {% for field in form %}
-            <label for="{{ field.id_for_label }}">{{ field.label }}{{ field }}
-                {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
-                {% if field.help_text %}<small class="field-help">{{ field.help_text|safe }}</small>{% endif %}
-            </label>
-        {% endfor %}
-        <button class="button" type="submit">Crear cuenta</button>
-        <p class="auth-switch">¿Ya tienes una cuenta? <a href="{% url 'iniciar_sesion' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Inicia sesión</a></p>
-    </form>
+
+<section class="auth">
+    <div class="auth-panel">
+        <div class="auth-panel-inner">
+            <div>
+                <p class="eyebrow eyebrow--lime">Primera vez</p>
+                <h1>Reserva<br>sin llamadas.</h1>
+                <p class="lead">Crea tu cuenta una vez y aparta tu horario en la grilla de la semana.</p>
+            </div>
+
+            <ul class="ticks ticks--light">
+                <li>Ves los cupos libres al instante.</li>
+                <li>El sistema evita las dobles reservas.</li>
+                <li>Puedes cancelar antes del partido.</li>
+            </ul>
+
+            <p class="auth-panel-foot">Canchas sintéticas · cupos de 60 minutos</p>
+        </div>
+    </div>
+
+    <div class="auth-main">
+        <div class="auth-form">
+            <h2>Crea tu cuenta</h2>
+            <p class="form-note form-note--left">Solo lo necesario para confirmar tu reserva.</p>
+
+            <form method="post" class="form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div class="field{% if field.errors %} field--error{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                        {% if field.help_text %}<p class="field-help">{{ field.help_text|safe }}</p>{% endif %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn btn--primary btn--block" type="submit">Crear cuenta</button>
+            </form>
+
+            <p class="auth-switch">¿Ya tienes una cuenta? <a href="{% url 'iniciar_sesion' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Inicia sesión</a></p>
+        </div>
+    </div>
 </section>
+
 {% endblock %}

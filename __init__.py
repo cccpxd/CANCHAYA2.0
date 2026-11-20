@@ -1,1 +1,0 @@
-"""Version sin base de datos del flujo de reservas para el parcial."""
